@@ -1,0 +1,26 @@
+name: LittleRip
+options:
+  minimumXcodeGenVersion: 2.42.0
+  deploymentTarget:
+    macOS: "15.0"
+settings:
+  base:
+    DEVELOPMENT_TEAM: 72CK386HNT
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: 5.0
+    MACOSX_DEPLOYMENT_TARGET: 15.0
+targets:
+  LittleRip:
+    type: application
+    platform: macOS
+    sources:
+      - LittleRip
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.maxautomize.LittleRipMac
+        PRODUCT_NAME: LittleRip
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright © 2026 LittleRip"
+        INFOPLIST_KEY_NSPrincipalClass: NSApplication
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
+        ENABLE_HARDENED_RUNTIME: YES

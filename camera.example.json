@@ -1,0 +1,4 @@
+{
+  "rtspURL": "rtsp://your-camera-ip:554/rtp/YOUR_STREAM_ID",
+  "activatorPath": "/Users/you/path/to/relay_activator.py"
+}
