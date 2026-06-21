@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		14285FF82238911EC706A7E5 /* AssistantService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46770DFDE0E928F4391A5909 /* AssistantService.swift */; };
 		1566185856F4259DD3FAA33A /* LittleRipApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 898D024CFCCC0375758B93FA /* LittleRipApp.swift */; };
 		15762185B3E64910A8B6FA01 /* VisionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8940BCA7DFD76FB166553BF4 /* VisionService.swift */; };
 		9A4ED3CA6FDA59B2A3E75933 /* CameraService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF1A4C3B241EE3509CAD2838 /* CameraService.swift */; };
@@ -15,6 +16,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		46770DFDE0E928F4391A5909 /* AssistantService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantService.swift; sourceTree = "<group>"; };
 		8676649E91364A8825D554A3 /* LittleRip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LittleRip.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8940BCA7DFD76FB166553BF4 /* VisionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionService.swift; sourceTree = "<group>"; };
 		898D024CFCCC0375758B93FA /* LittleRipApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LittleRipApp.swift; sourceTree = "<group>"; };
@@ -35,6 +37,7 @@
 		58A11190FA622056649C1B92 /* LittleRip */ = {
 			isa = PBXGroup;
 			children = (
+				46770DFDE0E928F4391A5909 /* AssistantService.swift */,
 				BF1A4C3B241EE3509CAD2838 /* CameraService.swift */,
 				E11672CBAA2986D6C905EFA6 /* ContentView.swift */,
 				E703B542C955E22B153820E0 /* KeySimulator.swift */,
@@ -111,6 +114,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				14285FF82238911EC706A7E5 /* AssistantService.swift in Sources */,
 				9A4ED3CA6FDA59B2A3E75933 /* CameraService.swift in Sources */,
 				9DB9ACF5411EE363A6F5F8C8 /* ContentView.swift in Sources */,
 				A2653DDCA61D9EB3B4AE08D9 /* KeySimulator.swift in Sources */,
@@ -131,7 +135,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 LittleRip";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "LittleRip listens through the microphone while Assistant mode is on.";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "LittleRip converts your speech to text to build Assistant context.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -216,7 +222,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 LittleRip";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "LittleRip listens through the microphone while Assistant mode is on.";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "LittleRip converts your speech to text to build Assistant context.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

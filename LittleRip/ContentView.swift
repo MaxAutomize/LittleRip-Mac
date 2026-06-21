@@ -53,6 +53,7 @@ struct ContentView: View {
     @StateObject private var camera = CameraService()
     @StateObject private var model = VisionService()
     @StateObject private var keys = KeyMonitor()
+    @StateObject private var assistant = AssistantService()
 
     var body: some View {
         ZStack {
@@ -134,6 +135,17 @@ struct ContentView: View {
                     }
                     .opacity(camera.isOn ? 1.0 : 0.35)
                     .disabled(!camera.isOn)
+
+                    PipelineCard(
+                        icon: "mic.fill",
+                        label: "Assistant",
+                        detail: assistant.detail,
+                        isOn: assistant.isOn,
+                        isStarting: assistant.isStarting || assistant.isThinking || assistant.isSpeaking,
+                        color: Color.lrAccent
+                    ) {
+                        if assistant.isOn { assistant.stop() } else { assistant.start() }
+                    }
                 }
                 .frame(maxWidth: 340)
                 .padding(.bottom, 24)

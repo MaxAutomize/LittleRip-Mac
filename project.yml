@@ -23,4 +23,6 @@ targets:
         INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright © 2026 LittleRip"
         INFOPLIST_KEY_NSPrincipalClass: NSApplication
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: "LittleRip listens through the microphone while Assistant mode is on."
+        INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "LittleRip converts your speech to text to build Assistant context."
         ENABLE_HARDENED_RUNTIME: YES
