@@ -1,4 +1,10 @@
 {
-  "rtspURL": "rtsp://your-camera-ip:554/rtp/YOUR_STREAM_ID",
-  "activatorPath": "/Users/you/path/to/relay_activator.py"
+  "rtspURL": "rtsp://fallback-only-if-activator-does-not-return-a-url/rtp/YOUR_STREAM_ID",
+  "activatorPath": "/Users/you/path/to/relay_activator.py",
+  "cameras": [
+    {
+      "name": "Hotspot Camera",
+      "uid": "YOUR_HOTSPOT_CAMERA_UID"
+    }
+  ]
 }

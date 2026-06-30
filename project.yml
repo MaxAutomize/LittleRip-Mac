@@ -19,6 +19,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.maxautomize.LittleRipMac
         PRODUCT_NAME: LittleRip
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright © 2026 LittleRip"
         INFOPLIST_KEY_NSPrincipalClass: NSApplication

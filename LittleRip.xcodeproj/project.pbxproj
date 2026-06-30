@@ -7,9 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		12AE0D6A89C0000A31C0931D /* SensorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 871D13C6C98DA8831CDEF56B /* SensorService.swift */; };
 		14285FF82238911EC706A7E5 /* AssistantService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46770DFDE0E928F4391A5909 /* AssistantService.swift */; };
 		1566185856F4259DD3FAA33A /* LittleRipApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 898D024CFCCC0375758B93FA /* LittleRipApp.swift */; };
 		15762185B3E64910A8B6FA01 /* VisionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8940BCA7DFD76FB166553BF4 /* VisionService.swift */; };
+		7B6858A25DB825955410FDBB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CC7E630EF66A1853978FC60E /* Assets.xcassets */; };
 		9A4ED3CA6FDA59B2A3E75933 /* CameraService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF1A4C3B241EE3509CAD2838 /* CameraService.swift */; };
 		9DB9ACF5411EE363A6F5F8C8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E11672CBAA2986D6C905EFA6 /* ContentView.swift */; };
 		A2653DDCA61D9EB3B4AE08D9 /* KeySimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E703B542C955E22B153820E0 /* KeySimulator.swift */; };
@@ -18,9 +20,11 @@
 /* Begin PBXFileReference section */
 		46770DFDE0E928F4391A5909 /* AssistantService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantService.swift; sourceTree = "<group>"; };
 		8676649E91364A8825D554A3 /* LittleRip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LittleRip.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		871D13C6C98DA8831CDEF56B /* SensorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorService.swift; sourceTree = "<group>"; };
 		8940BCA7DFD76FB166553BF4 /* VisionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionService.swift; sourceTree = "<group>"; };
 		898D024CFCCC0375758B93FA /* LittleRipApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LittleRipApp.swift; sourceTree = "<group>"; };
 		BF1A4C3B241EE3509CAD2838 /* CameraService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraService.swift; sourceTree = "<group>"; };
+		CC7E630EF66A1853978FC60E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E11672CBAA2986D6C905EFA6 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		E703B542C955E22B153820E0 /* KeySimulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeySimulator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -37,11 +41,13 @@
 		58A11190FA622056649C1B92 /* LittleRip */ = {
 			isa = PBXGroup;
 			children = (
+				CC7E630EF66A1853978FC60E /* Assets.xcassets */,
 				46770DFDE0E928F4391A5909 /* AssistantService.swift */,
 				BF1A4C3B241EE3509CAD2838 /* CameraService.swift */,
 				E11672CBAA2986D6C905EFA6 /* ContentView.swift */,
 				E703B542C955E22B153820E0 /* KeySimulator.swift */,
 				898D024CFCCC0375758B93FA /* LittleRipApp.swift */,
+				871D13C6C98DA8831CDEF56B /* SensorService.swift */,
 				8940BCA7DFD76FB166553BF4 /* VisionService.swift */,
 			);
 			path = LittleRip;
@@ -63,6 +69,7 @@
 			buildConfigurationList = CC621FB232ED6A68F104CF33 /* Build configuration list for PBXNativeTarget "LittleRip" */;
 			buildPhases = (
 				502643DCFE43739A41EAB8B6 /* Sources */,
+				6967C0BBEC1121220054451A /* Resources */,
 			);
 			buildRules = (
 			);
@@ -109,6 +116,17 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		6967C0BBEC1121220054451A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7B6858A25DB825955410FDBB /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		502643DCFE43739A41EAB8B6 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -119,6 +137,7 @@
 				9DB9ACF5411EE363A6F5F8C8 /* ContentView.swift in Sources */,
 				A2653DDCA61D9EB3B4AE08D9 /* KeySimulator.swift in Sources */,
 				1566185856F4259DD3FAA33A /* LittleRipApp.swift in Sources */,
+				12AE0D6A89C0000A31C0931D /* SensorService.swift in Sources */,
 				15762185B3E64910A8B6FA01 /* VisionService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

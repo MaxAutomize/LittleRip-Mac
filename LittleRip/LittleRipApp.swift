@@ -8,6 +8,6 @@ struct LittleRipApp: App {
         }
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
-        .defaultSize(width: 440, height: 620)
+        .defaultSize(width: 1090, height: 790)
     }
 }
