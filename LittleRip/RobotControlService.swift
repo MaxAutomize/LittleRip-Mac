@@ -24,6 +24,9 @@ struct RobotControlConfig: Codable {
             "rightfootforward": "O",
             "rightfootback": "l",
             "rightfootstop": "o",
+            "weightshiftleft": "Z",
+            "weightshiftright": "X",
+            "weightshiftstop": "z",
             "stop": "S"
         ]
         commands?.forEach { base[$0.key.lowercased()] = $0.value }

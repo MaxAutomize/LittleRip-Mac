@@ -85,6 +85,19 @@ void rightFootStop() {
   digitalWrite(RIGHT_BACK_PIN, LOW);
 }
 
+void weightShiftLeft() {
+  // TODO: drive your weight-shift mechanism left here.
+  // Examples: set servo angle, run a linear actuator, move a sliding mass, etc.
+}
+
+void weightShiftRight() {
+  // TODO: drive your weight-shift mechanism right here.
+}
+
+void weightShiftStop() {
+  // TODO: stop/hold your weight-shift mechanism here.
+}
+
 void applyCommand(char c) {
   switch (c) {
     case 'F': forward(); break;
@@ -97,6 +110,9 @@ void applyCommand(char c) {
     case 'O': rightFootForward(); break;
     case 'l': rightFootBack(); break;
     case 'o': rightFootStop(); break;
+    case 'Z': weightShiftLeft(); break;
+    case 'X': weightShiftRight(); break;
+    case 'z': weightShiftStop(); break;
     case 'S':
     default: stopMotors(); break;
   }

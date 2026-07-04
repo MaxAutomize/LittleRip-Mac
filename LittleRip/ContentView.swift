@@ -23,7 +23,7 @@ class KeyMonitor: ObservableObject {
     var onDirectionEvent: ((String, Bool) -> Void)?
 
     private var monitor: Any?
-    private let controlKeyCodes: Set<UInt16> = [123, 124, 125, 126, 12, 0, 31, 37]
+    private let controlKeyCodes: Set<UInt16> = [123, 124, 125, 126, 12, 0, 31, 37, 6, 7]
     private let directionByKeyCode: [UInt16: String] = [
         123: "left",
         124: "right",
@@ -32,7 +32,9 @@ class KeyMonitor: ObservableObject {
         12: "leftFootForward",   // Q
         0: "leftFootBack",       // A
         31: "rightFootForward",  // O
-        37: "rightFootBack"      // L
+        37: "rightFootBack",     // L
+        6: "weightShiftLeft",    // Z
+        7: "weightShiftRight"    // X
     ]
 
     init() {
@@ -67,6 +69,8 @@ class KeyMonitor: ObservableObject {
     var isLeftFootBackPressed: Bool { pressedKeys.contains(0) }
     var isRightFootForwardPressed: Bool { pressedKeys.contains(31) }
     var isRightFootBackPressed: Bool { pressedKeys.contains(37) }
+    var isWeightShiftLeftPressed: Bool { pressedKeys.contains(6) }
+    var isWeightShiftRightPressed: Bool { pressedKeys.contains(7) }
 }
 
 // MARK: - ContentView
@@ -114,6 +118,8 @@ struct ContentView: View {
                     robot.send(direction: "leftFootStop")
                 } else if direction.hasPrefix("rightFoot") {
                     robot.send(direction: "rightFootStop")
+                } else if direction.hasPrefix("weightShift") {
+                    robot.send(direction: "weightShiftStop")
                 } else {
                     robot.stop()
                 }
@@ -194,16 +200,25 @@ struct DashboardCanvas: View {
                 aiToggle: aiToggle
             )
 
-            FootControls(
-                leftForwardActive: keys.isLeftFootForwardPressed,
-                leftBackActive: keys.isLeftFootBackPressed,
-                rightForwardActive: keys.isRightFootForwardPressed,
-                rightBackActive: keys.isRightFootBackPressed,
-                leftForwardAction: { robot.pulse(direction: "leftFootForward") },
-                leftBackAction: { robot.pulse(direction: "leftFootBack") },
-                rightForwardAction: { robot.pulse(direction: "rightFootForward") },
-                rightBackAction: { robot.pulse(direction: "rightFootBack") }
-            )
+            HStack(spacing: 14) {
+                FootControls(
+                    leftForwardActive: keys.isLeftFootForwardPressed,
+                    leftBackActive: keys.isLeftFootBackPressed,
+                    rightForwardActive: keys.isRightFootForwardPressed,
+                    rightBackActive: keys.isRightFootBackPressed,
+                    leftForwardAction: { robot.pulse(direction: "leftFootForward") },
+                    leftBackAction: { robot.pulse(direction: "leftFootBack") },
+                    rightForwardAction: { robot.pulse(direction: "rightFootForward") },
+                    rightBackAction: { robot.pulse(direction: "rightFootBack") }
+                )
+
+                WeightShiftControls(
+                    shiftLeftActive: keys.isWeightShiftLeftPressed,
+                    shiftRightActive: keys.isWeightShiftRightPressed,
+                    shiftLeftAction: { robot.pulse(direction: "weightShiftLeft") },
+                    shiftRightAction: { robot.pulse(direction: "weightShiftRight") }
+                )
+            }
         }
         .padding(14)
         .frame(width: 1060, height: 760, alignment: .topLeading)
@@ -392,7 +407,7 @@ struct FootControls: View {
     let rightBackAction: () -> Void
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 12) {
             FootPairPanel(
                 title: "LEFT FOOT",
                 forwardKey: "Q",
@@ -427,15 +442,41 @@ struct FootPairPanel: View {
     var body: some View {
         HStack(spacing: 10) {
             Text(title)
-                .font(.system(size: 18, weight: .black, design: .monospaced))
-                .tracking(2)
+                .font(.system(size: 14, weight: .black, design: .monospaced))
+                .tracking(1.2)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
                 .foregroundStyle(Color.botWhite)
-                .frame(width: 170, alignment: .leading)
+                .frame(width: 102, alignment: .leading)
 
             FootButton(title: "FWD", key: forwardKey, isActive: forwardActive, action: forwardAction)
             FootButton(title: "BACK", key: backKey, isActive: backActive, action: backAction)
         }
-        .padding(14)
+        .padding(12)
+        .background(Color.botPanel2)
+        .clipShape(RoundedRectangle(cornerRadius: 22))
+        .overlay(RoundedRectangle(cornerRadius: 22).stroke(Color.botChrome.opacity(0.45), lineWidth: 2))
+    }
+}
+
+struct WeightShiftControls: View {
+    let shiftLeftActive: Bool
+    let shiftRightActive: Bool
+    let shiftLeftAction: () -> Void
+    let shiftRightAction: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text("WEIGHT")
+                .font(.system(size: 14, weight: .black, design: .monospaced))
+                .tracking(1.2)
+                .foregroundStyle(Color.botWhite)
+                .frame(width: 72, alignment: .leading)
+
+            FootButton(title: "LEFT", key: "Z", isActive: shiftLeftActive, action: shiftLeftAction)
+            FootButton(title: "RIGHT", key: "X", isActive: shiftRightActive, action: shiftRightAction)
+        }
+        .padding(12)
         .background(Color.botPanel2)
         .clipShape(RoundedRectangle(cornerRadius: 22))
         .overlay(RoundedRectangle(cornerRadius: 22).stroke(Color.botChrome.opacity(0.45), lineWidth: 2))
@@ -450,12 +491,12 @@ struct FootButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 Text(key)
-                    .font(.system(size: 26, weight: .heavy, design: .monospaced))
+                    .font(.system(size: 24, weight: .heavy, design: .monospaced))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 14, weight: .black, design: .monospaced))
+                        .font(.system(size: 11, weight: .black, design: .monospaced))
                         .tracking(1.1)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
@@ -467,8 +508,8 @@ struct FootButton: View {
                 Spacer(minLength: 0)
             }
             .foregroundStyle(isActive ? Color.black : Color.botWhite)
-            .padding(.horizontal, 14)
-            .frame(width: 130, height: 58)
+            .padding(.horizontal, 12)
+            .frame(width: 96, height: 58)
             .background(isActive ? Color.botGreen : Color.botPanel2)
             .overlay(RoundedRectangle(cornerRadius: 22).stroke(isActive ? Color.botGreen : Color.botChrome.opacity(0.45), lineWidth: 3))
             .clipShape(RoundedRectangle(cornerRadius: 22))

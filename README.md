@@ -16,13 +16,17 @@ Thinking/reasoning is explicitly disabled on both Ollama model calls with `think
 - Camera switch for the frame feed.
 - Sensor switch for HC-SR04 + sound sensor readings.
 - Frame AI switch for camera-frame → movement decisions.
-- Bottom foot controls:
+- Bottom walking controls:
   - **Left Foot Forward** → key `Q` → ESP UDP `Q`
   - **Left Foot Back** → key `A` → ESP UDP `A`
   - releasing Q/A sends `q` to stop only the left foot
   - **Right Foot Forward** → key `O` → ESP UDP `O`
   - **Right Foot Back** → key `L` → ESP UDP lowercase `l`
   - releasing O/L sends `o` to stop only the right foot
+- Weight-shift controls:
+  - **Weight Left** → key `Z` → ESP UDP `Z`
+  - **Weight Right** → key `X` → ESP UDP `X`
+  - releasing Z/X sends `z` to stop/hold the weight-shift mechanism
 - Arrow keys still work for whole-robot movement:
   - ↑ `F`
   - ↓ `B`
@@ -59,6 +63,9 @@ Example:
     "rightFootForward": "O",
     "rightFootBack": "l",
     "rightFootStop": "o",
+    "weightShiftLeft": "Z",
+    "weightShiftRight": "X",
+    "weightShiftStop": "z",
     "stop": "S"
   }
 }
@@ -72,7 +79,7 @@ For the least latency, put the ESP32 in SoftAP mode, connect the Mac to that Wi-
 
 ## How it works
 
-1. **Manual keyboard control** — `KeyMonitor` captures arrow keys plus Q/A/O/L foot keys. `RobotControlService` immediately sends one-byte UDP movement commands to the ESP.
+1. **Manual keyboard control** — `KeyMonitor` captures arrow keys, Q/A/O/L foot keys, and Z/X weight-shift keys. `RobotControlService` immediately sends one-byte UDP movement commands to the ESP.
 2. **Camera frame feed** — `CameraService` runs the configured camera relay activator, reads the current `RTSP_URL`, opens the stream with `ffmpeg`, and writes the current frame to `/tmp/littlerip_latest.jpg`.
 3. **Frame AI** — `VisionService` sends the latest frame to local Ollama’s native API using cloud model `gemma4:31b-cloud`, `think: false`, `stream: false`, and asks for one movement word. The result is sent to the ESP via `RobotControlService`.
 4. **Sensor AI** — `SensorService.swift` watches `/tmp/littlebot_hcsr04.txt` and `/tmp/littlebot_sound.txt`, sends readings to `glm-5.1:cloud` with `think: false`, and displays a one-word safety status.

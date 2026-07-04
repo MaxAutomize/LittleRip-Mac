@@ -12,6 +12,9 @@
     "rightFootForward": "O",
     "rightFootBack": "l",
     "rightFootStop": "o",
+    "weightShiftLeft": "Z",
+    "weightShiftRight": "X",
+    "weightShiftStop": "z",
     "stop": "S"
   }
 }
