@@ -20,17 +20,34 @@ extension Color {
 class KeyMonitor: ObservableObject {
     @Published var pressedKeys: Set<UInt16> = []
 
+    var onDirectionEvent: ((String, Bool) -> Void)?
+
     private var monitor: Any?
-    private let arrowKeyCodes: Set<UInt16> = [123, 124, 125, 126]
+    private let controlKeyCodes: Set<UInt16> = [123, 124, 125, 126, 12, 0, 31, 37]
+    private let directionByKeyCode: [UInt16: String] = [
+        123: "left",
+        124: "right",
+        125: "back",
+        126: "forward",
+        12: "leftFootForward",   // Q
+        0: "leftFootBack",       // A
+        31: "rightFootForward",  // O
+        37: "rightFootBack"      // L
+    ]
 
     init() {
         monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp]) { [weak self] event in
-            let isArrow = self?.arrowKeyCodes.contains(event.keyCode) ?? false
-            if isArrow {
+            guard let self else { return event }
+            let isControlKey = self.controlKeyCodes.contains(event.keyCode)
+            if isControlKey {
+                let direction = self.directionByKeyCode[event.keyCode] ?? "stop"
                 if event.type == .keyDown {
-                    self?.pressedKeys.insert(event.keyCode)
+                    let wasAlreadyDown = self.pressedKeys.contains(event.keyCode)
+                    self.pressedKeys.insert(event.keyCode)
+                    if !wasAlreadyDown { self.onDirectionEvent?(direction, true) }
                 } else {
-                    self?.pressedKeys.remove(event.keyCode)
+                    self.pressedKeys.remove(event.keyCode)
+                    self.onDirectionEvent?(direction, false)
                 }
                 return nil
             }
@@ -44,6 +61,12 @@ class KeyMonitor: ObservableObject {
 
     var isLeftPressed: Bool { pressedKeys.contains(123) }
     var isRightPressed: Bool { pressedKeys.contains(124) }
+    var isForwardPressed: Bool { pressedKeys.contains(126) }
+    var isBackPressed: Bool { pressedKeys.contains(125) }
+    var isLeftFootForwardPressed: Bool { pressedKeys.contains(12) }
+    var isLeftFootBackPressed: Bool { pressedKeys.contains(0) }
+    var isRightFootForwardPressed: Bool { pressedKeys.contains(31) }
+    var isRightFootBackPressed: Bool { pressedKeys.contains(37) }
 }
 
 // MARK: - ContentView
@@ -52,6 +75,7 @@ struct ContentView: View {
     @StateObject private var camera = CameraService()
     @StateObject private var frameAI = VisionService()
     @StateObject private var sensor = UltrasonicSensorService()
+    @StateObject private var robot = RobotControlService()
     @StateObject private var keys = KeyMonitor()
 
     private var primaryCamera: CameraConfig? { camera.cameras.first }
@@ -69,6 +93,7 @@ struct ContentView: View {
                     camera: camera,
                     frameAI: frameAI,
                     sensor: sensor,
+                    robot: robot,
                     keys: keys,
                     cameraToggle: toggleCamera,
                     sensorToggle: toggleSensor,
@@ -81,10 +106,24 @@ struct ContentView: View {
             }
         }
         .frame(minWidth: 120, minHeight: 90)
+        .onAppear {
+            keys.onDirectionEvent = { direction, isDown in
+                if isDown {
+                    robot.send(direction: direction)
+                } else if direction.hasPrefix("leftFoot") {
+                    robot.send(direction: "leftFootStop")
+                } else if direction.hasPrefix("rightFoot") {
+                    robot.send(direction: "rightFootStop")
+                } else {
+                    robot.stop()
+                }
+            }
+        }
         .onDisappear {
             frameAI.stop()
             camera.stop()
             sensor.stop()
+            robot.stop()
         }
     }
 
@@ -108,7 +147,7 @@ struct ContentView: View {
         if frameAI.isOn {
             frameAI.stop()
         } else if camera.isOn {
-            frameAI.start(frameMode: .fast, camera: camera)
+            frameAI.start(frameMode: .fast, camera: camera, robotControl: robot)
         }
     }
 }
@@ -119,6 +158,7 @@ struct DashboardCanvas: View {
     @ObservedObject var camera: CameraService
     @ObservedObject var frameAI: VisionService
     @ObservedObject var sensor: UltrasonicSensorService
+    @ObservedObject var robot: RobotControlService
     @ObservedObject var keys: KeyMonitor
 
     let cameraToggle: () -> Void
@@ -155,10 +195,14 @@ struct DashboardCanvas: View {
             )
 
             FootControls(
-                leftActive: keys.isLeftPressed || frameAI.currentDirection == "left",
-                rightActive: keys.isRightPressed || frameAI.currentDirection == "right",
-                leftAction: { Task { await KeySimulator.press(direction: "left", duration: 0.25) } },
-                rightAction: { Task { await KeySimulator.press(direction: "right", duration: 0.25) } }
+                leftForwardActive: keys.isLeftFootForwardPressed,
+                leftBackActive: keys.isLeftFootBackPressed,
+                rightForwardActive: keys.isRightFootForwardPressed,
+                rightBackActive: keys.isRightFootBackPressed,
+                leftForwardAction: { robot.pulse(direction: "leftFootForward") },
+                leftBackAction: { robot.pulse(direction: "leftFootBack") },
+                rightForwardAction: { robot.pulse(direction: "rightFootForward") },
+                rightBackAction: { robot.pulse(direction: "rightFootBack") }
             )
         }
         .padding(14)
@@ -297,8 +341,9 @@ struct SensorPanel: View {
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
-                    DataRow(label: "DATA PIPE", value: "/tmp/littlebot_hcsr04.txt")
-                    DataRow(label: "RAW", value: sensor.lastRawValue)
+                    DataRow(label: "RANGE", value: sensor.lastRawValue)
+                    DataRow(label: "SOUND", value: sensor.lastSoundRawValue)
+                    DataRow(label: "GLM AI", value: sensor.sensorAILatencyMs > 0 ? "\(sensor.sensorAIStatus) · \(sensor.sensorAILatencyMs)ms" : sensor.sensorAIStatus)
                     DataRow(label: "UPDATED", value: sensor.lastUpdated.map { $0.formatted(date: .omitted, time: .standard) } ?? "—")
                 }
             }
@@ -337,16 +382,63 @@ struct LaunchSwitchBoard: View {
 }
 
 struct FootControls: View {
-    let leftActive: Bool
-    let rightActive: Bool
-    let leftAction: () -> Void
-    let rightAction: () -> Void
+    let leftForwardActive: Bool
+    let leftBackActive: Bool
+    let rightForwardActive: Bool
+    let rightBackActive: Bool
+    let leftForwardAction: () -> Void
+    let leftBackAction: () -> Void
+    let rightForwardAction: () -> Void
+    let rightBackAction: () -> Void
 
     var body: some View {
-        HStack(spacing: 20) {
-            FootButton(title: "LEFT FOOT", key: "←", isActive: leftActive, action: leftAction)
-            FootButton(title: "RIGHT FOOT", key: "→", isActive: rightActive, action: rightAction)
+        HStack(spacing: 16) {
+            FootPairPanel(
+                title: "LEFT FOOT",
+                forwardKey: "Q",
+                backKey: "A",
+                forwardActive: leftForwardActive,
+                backActive: leftBackActive,
+                forwardAction: leftForwardAction,
+                backAction: leftBackAction
+            )
+            FootPairPanel(
+                title: "RIGHT FOOT",
+                forwardKey: "O",
+                backKey: "L",
+                forwardActive: rightForwardActive,
+                backActive: rightBackActive,
+                forwardAction: rightForwardAction,
+                backAction: rightBackAction
+            )
         }
+    }
+}
+
+struct FootPairPanel: View {
+    let title: String
+    let forwardKey: String
+    let backKey: String
+    let forwardActive: Bool
+    let backActive: Bool
+    let forwardAction: () -> Void
+    let backAction: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text(title)
+                .font(.system(size: 18, weight: .black, design: .monospaced))
+                .tracking(2)
+                .foregroundStyle(Color.botWhite)
+                .frame(width: 170, alignment: .leading)
+
+            FootButton(title: "FWD", key: forwardKey, isActive: forwardActive, action: forwardAction)
+            FootButton(title: "BACK", key: backKey, isActive: backActive, action: backAction)
+        }
+        .padding(14)
+        .background(Color.botPanel2)
+        .clipShape(RoundedRectangle(cornerRadius: 22))
+        .overlay(RoundedRectangle(cornerRadius: 22).stroke(Color.botChrome.opacity(0.45), lineWidth: 2))
     }
 }
 
@@ -358,23 +450,25 @@ struct FootButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 16) {
+            HStack(spacing: 10) {
                 Text(key)
-                    .font(.system(size: 34, weight: .heavy, design: .monospaced))
+                    .font(.system(size: 26, weight: .heavy, design: .monospaced))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 20, weight: .black, design: .monospaced))
-                        .tracking(2)
-                    Text("keyboard arrow output")
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
-                        .tracking(1.5)
+                        .font(.system(size: 14, weight: .black, design: .monospaced))
+                        .tracking(1.1)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    Text("ESP UDP")
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .tracking(1.2)
                         .opacity(0.65)
                 }
-                Spacer()
+                Spacer(minLength: 0)
             }
             .foregroundStyle(isActive ? Color.black : Color.botWhite)
-            .padding(.horizontal, 22)
-            .frame(height: 74)
+            .padding(.horizontal, 14)
+            .frame(width: 130, height: 58)
             .background(isActive ? Color.botGreen : Color.botPanel2)
             .overlay(RoundedRectangle(cornerRadius: 22).stroke(isActive ? Color.botGreen : Color.botChrome.opacity(0.45), lineWidth: 3))
             .clipShape(RoundedRectangle(cornerRadius: 22))

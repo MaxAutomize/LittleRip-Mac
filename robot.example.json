@@ -1,0 +1,17 @@
+{
+  "espHost": "192.168.4.1",
+  "espPort": 4210,
+  "commands": {
+    "forward": "F",
+    "back": "B",
+    "left": "L",
+    "right": "R",
+    "leftFootForward": "Q",
+    "leftFootBack": "A",
+    "leftFootStop": "q",
+    "rightFootForward": "O",
+    "rightFootBack": "l",
+    "rightFootStop": "o",
+    "stop": "S"
+  }
+}

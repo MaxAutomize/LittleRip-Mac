@@ -19,6 +19,7 @@ final class VisionService: NSObject, ObservableObject, AVSpeechSynthesizerDelega
     private var lastModTime: Date = .distantPast
     private var frameMode: CameraFrameMode = .fast
     private weak var cameraService: CameraService?
+    private weak var robotControl: RobotControlService?
 
     private let speechSynthesizer = AVSpeechSynthesizer()
     private var speechContinuation: CheckedContinuation<Void, Never>?
@@ -71,13 +72,14 @@ final class VisionService: NSObject, ObservableObject, AVSpeechSynthesizerDelega
         "right": 124
     ]
 
-    func start(frameMode: CameraFrameMode, camera: CameraService? = nil) {
+    func start(frameMode: CameraFrameMode, camera: CameraService? = nil, robotControl: RobotControlService? = nil) {
         guard !isOn else {
             setFrameMode(frameMode)
             return
         }
         self.frameMode = frameMode
         self.cameraService = camera
+        self.robotControl = robotControl
         resetTutorState()
         isOn = true
         task = Task {
@@ -161,13 +163,14 @@ final class VisionService: NSObject, ObservableObject, AVSpeechSynthesizerDelega
             lastLatencyMs = Int(Date().timeIntervalSince(start) * 1000)
             framesAnalyzed += 1
 
-            if let code = keyCodeMap[direction] {
+            if keyCodeMap[direction] != nil {
                 currentDirection = direction
-                let downEvent = CGEvent(keyboardEventSource: nil, virtualKey: code, keyDown: true)
-                downEvent?.post(tap: .cghidEventTap)
-                try? await Task.sleep(nanoseconds: 1_000_000_000)
-                let upEvent = CGEvent(keyboardEventSource: nil, virtualKey: code, keyDown: false)
-                upEvent?.post(tap: .cghidEventTap)
+                if let robotControl {
+                    robotControl.pulse(direction: direction, duration: 0.18)
+                } else {
+                    await KeySimulator.press(direction: direction, duration: 0.18)
+                }
+                try? await Task.sleep(nanoseconds: 180_000_000)
                 currentDirection = nil
             }
         } catch {
@@ -251,23 +254,22 @@ final class VisionService: NSObject, ObservableObject, AVSpeechSynthesizerDelega
 
     private func askVision(systemPrompt: String, userText: String, imageData: Data, maxTokens: Int) async throws -> String {
         let b64 = imageData.base64EncodedString()
-        let userContent: [[String: Any]] = [
-            ["type": "text", "text": userText],
-            ["type": "image_url", "image_url": ["url": "data:image/jpeg;base64,\(b64)"]]
-        ]
-
         let body: [String: Any] = [
             "model": "gemma4:31b-cloud",
             "messages": [
                 ["role": "system", "content": systemPrompt],
-                ["role": "user", "content": userContent]
+                ["role": "user", "content": userText, "images": [b64]]
             ],
-            "max_tokens": maxTokens,
-            "stream": false
+            "think": false,
+            "stream": false,
+            "options": [
+                "num_predict": maxTokens,
+                "temperature": 0
+            ]
         ]
 
         let httpBody = try JSONSerialization.data(withJSONObject: body)
-        var req = URLRequest(url: URL(string: "http://localhost:11434/v1/chat/completions")!)
+        var req = URLRequest(url: URL(string: "http://127.0.0.1:11434/api/chat")!)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = httpBody
@@ -279,9 +281,8 @@ final class VisionService: NSObject, ObservableObject, AVSpeechSynthesizerDelega
         }
 
         guard let json = try? JSONSerialization.jsonObject(with: responseData) as? [String: Any],
-              let choices = json["choices"] as? [[String: Any]],
-              let content = choices.first?["message"] as? [String: Any],
-              let text = content["content"] as? String else {
+              let message = json["message"] as? [String: Any],
+              let text = message["content"] as? String else {
             throw NSError(domain: "Vision", code: 2)
         }
         return text

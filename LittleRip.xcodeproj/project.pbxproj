@@ -15,10 +15,12 @@
 		9A4ED3CA6FDA59B2A3E75933 /* CameraService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF1A4C3B241EE3509CAD2838 /* CameraService.swift */; };
 		9DB9ACF5411EE363A6F5F8C8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E11672CBAA2986D6C905EFA6 /* ContentView.swift */; };
 		A2653DDCA61D9EB3B4AE08D9 /* KeySimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E703B542C955E22B153820E0 /* KeySimulator.swift */; };
+		CCC48A05A623E6148BB6AD9A /* RobotControlService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 737D6EABEDC4CC07C6D25A49 /* RobotControlService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		46770DFDE0E928F4391A5909 /* AssistantService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantService.swift; sourceTree = "<group>"; };
+		737D6EABEDC4CC07C6D25A49 /* RobotControlService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobotControlService.swift; sourceTree = "<group>"; };
 		8676649E91364A8825D554A3 /* LittleRip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LittleRip.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		871D13C6C98DA8831CDEF56B /* SensorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorService.swift; sourceTree = "<group>"; };
 		8940BCA7DFD76FB166553BF4 /* VisionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionService.swift; sourceTree = "<group>"; };
@@ -47,6 +49,7 @@
 				E11672CBAA2986D6C905EFA6 /* ContentView.swift */,
 				E703B542C955E22B153820E0 /* KeySimulator.swift */,
 				898D024CFCCC0375758B93FA /* LittleRipApp.swift */,
+				737D6EABEDC4CC07C6D25A49 /* RobotControlService.swift */,
 				871D13C6C98DA8831CDEF56B /* SensorService.swift */,
 				8940BCA7DFD76FB166553BF4 /* VisionService.swift */,
 			);
@@ -137,6 +140,7 @@
 				9DB9ACF5411EE363A6F5F8C8 /* ContentView.swift in Sources */,
 				A2653DDCA61D9EB3B4AE08D9 /* KeySimulator.swift in Sources */,
 				1566185856F4259DD3FAA33A /* LittleRipApp.swift in Sources */,
+				CCC48A05A623E6148BB6AD9A /* RobotControlService.swift in Sources */,
 				12AE0D6A89C0000A31C0931D /* SensorService.swift in Sources */,
 				15762185B3E64910A8B6FA01 /* VisionService.swift in Sources */,
 			);
