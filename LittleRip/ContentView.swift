@@ -178,7 +178,7 @@ struct HeaderDeck: View {
                     .tracking(4)
                     .foregroundStyle(Color.botGreen)
 
-                Text("sensor data • MPU6050 IMU • GLM 5.1 fast actions")
+                Text("sensor data • MPU6050 IMU • continuous GLM 5.1 controller")
                     .font(.system(size: 12, weight: .semibold, design: .monospaced))
                     .tracking(1.5)
                     .foregroundStyle(Color.botChrome.opacity(0.72))
@@ -204,9 +204,9 @@ struct ModelIOPanel: View {
     @ObservedObject var motionAI: MotionAIService
 
     var body: some View {
-        ConsolePanel(title: "MODEL INPUT WINDOW", subtitle: "sent to glm-5.1:cloud · think=false · 1hz") {
+        ConsolePanel(title: "MODEL INPUT WINDOW", subtitle: "continuous latest-input queue · glm-5.1 · think=false") {
             VStack(alignment: .leading, spacing: 10) {
-                DataRow(label: "MODEL", value: "glm-5.1:cloud · think=false · stream=false")
+                DataRow(label: "MODEL", value: "glm-5.1:cloud · think=false · keep_alive=30m")
                 DataRow(label: "FILES", value: "/tmp/littlebot_hcsr04.txt · /tmp/littlebot_sound.txt · /tmp/littlebot_mpu6050.json")
                 ScrollTextBox(title: "INPUT SENT", text: motionAI.modelInput, height: 176)
                 ScrollTextBox(title: "RAW OUTPUT", text: motionAI.modelOutput, height: 70)
@@ -242,6 +242,7 @@ struct RobotOutputPanel: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     DataRow(label: "LATENCY", value: motionAI.lastLatencyMs > 0 ? "\(motionAI.lastLatencyMs)ms" : "—")
+                    DataRow(label: "LOOP", value: motionAI.loopStatus)
                     DataRow(label: "TICKS", value: "\(motionAI.ticks)")
                     DataRow(label: "ESP", value: robot.endpointDescription)
                     DataRow(label: "PACKETS", value: "\(robot.packetsSent)")
@@ -295,7 +296,7 @@ struct LaunchSwitchBoard: View {
             HStack(spacing: 14) {
                 LaunchToggle(title: "RANGE/SOUND", subtitle: "HC-SR04 + SOUND", icon: "dot.radiowaves.left.and.right", isOn: rangeSoundOn, action: rangeSoundToggle)
                 LaunchToggle(title: "MPU6050", subtitle: "GYRO / ACCEL", icon: "gyroscope", isOn: imuOn, action: imuToggle)
-                LaunchToggle(title: "GLM WALKER", subtitle: "1HZ ACTION LOOP", icon: "brain.head.profile", isOn: aiOn, action: aiToggle)
+                LaunchToggle(title: "GLM WALKER", subtitle: "CONTINUOUS LOOP", icon: "brain.head.profile", isOn: aiOn, action: aiToggle)
             }
         }
     }

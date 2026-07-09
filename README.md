@@ -6,8 +6,8 @@ The camera system has been removed from the current app flow. The main loop is n
 
 1. read HC-SR04 range + sound sensor text
 2. optionally read GY-521 / MPU6050 6-axis IMU data
-3. send a very short prompt to `glm-5.1:cloud` with `think: false`
-4. show the exact input and output in the UI
+3. feed the newest compact sensor state into a continuous GLM worker using `glm-5.1:cloud` with `think: false`
+4. show the exact latest input and output in the UI
 5. send the resulting one-word/short command to the ESP over UDP
 
 ## Current app experience
@@ -21,7 +21,7 @@ The camera system has been removed from the current app flow. The main loop is n
 - **Control Switchboard**:
   - `RANGE/SOUND` — reads `/tmp/littlebot_hcsr04.txt` and `/tmp/littlebot_sound.txt`
   - `MPU6050` — reads `/tmp/littlebot_mpu6050.json`
-  - `GLM WALKER` — runs the 1 Hz action loop
+  - `GLM WALKER` — runs the continuous latest-input action loop
 
 ## GLM controller
 
@@ -32,9 +32,11 @@ Only one model is hooked up for the action loop right now:
 - Thinking/reasoning: `think: false`
 - Streaming: `false`
 - Prediction budget: tiny (`num_predict: 4`) for speed
-- Loop rate: 1 call per second
+- Loop mode: continuous latest-input worker; old sensor frames are dropped instead of queued
+- `keep_alive: 30m` keeps the Ollama Cloud model path warm where supported
+- After each model response, the app immediately reads the newest sensor frame and sends the next request
 
-The prompt is intentionally short. The model can output only:
+The prompt is intentionally tiny for latency. The model can output only:
 
 `LF, RF, LB, RB, WL, WR, LS, RS, WS, STOP, NONE`
 

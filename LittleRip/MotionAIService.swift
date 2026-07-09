@@ -12,23 +12,27 @@ final class MotionAIService: ObservableObject {
     @Published var ticks = 0
     @Published var lastUpdated: Date?
     @Published var activeAction: String?
+    @Published var loopStatus = "stopped"
 
     private weak var robot: RobotControlService?
     private var task: Task<Void, Never>?
+    private var lastSubmittedInput = ""
 
     private let rangeFile = URL(fileURLWithPath: "/tmp/littlebot_hcsr04.txt")
     private let soundFile = URL(fileURLWithPath: "/tmp/littlebot_sound.txt")
     private let imuFile = URL(fileURLWithPath: "/tmp/littlebot_mpu6050.json")
+    private let chatURL = URL(string: "http://127.0.0.1:11434/api/chat")!
 
     func start(robot: RobotControlService) {
         guard !isOn else { return }
         self.robot = robot
         isOn = true
+        loopStatus = "warming glm"
+        lastSubmittedInput = ""
+
         task = Task { [weak self] in
-            while !Task.isCancelled {
-                await self?.runOnce()
-                try? await Task.sleep(nanoseconds: 1_000_000_000)
-            }
+            await self?.warmGLM()
+            await self?.continuousControllerLoop()
         }
     }
 
@@ -36,27 +40,50 @@ final class MotionAIService: ObservableObject {
         task?.cancel()
         task = nil
         isOn = false
+        loopStatus = "stopped"
         modelOutput = "—"
         lastCommand = "stop"
         activeAction = nil
         robot?.stop()
     }
 
-    func runOnce() async {
-        guard isOn else { return }
-        let input = compactSensorInput()
-        modelInput = input
-        let start = Date()
+    private func continuousControllerLoop() async {
+        while !Task.isCancelled && isOn {
+            let input = compactSensorInput()
+            modelInput = input
+            lastSubmittedInput = input
+            loopStatus = "glm in-flight · latest input only"
+
+            let start = Date()
+            do {
+                let command = try await askGLM(input)
+                guard !Task.isCancelled && isOn else { return }
+
+                lastLatencyMs = Int(Date().timeIntervalSince(start) * 1000)
+                ticks += 1
+                lastUpdated = Date()
+                modelOutput = command
+                loopStatus = "executed · reading next sensor frame"
+                execute(command)
+
+                // Yield to UI + sensor-file writers, then immediately consume the
+                // newest sensor state. No stale queue is allowed to build up.
+                try? await Task.sleep(nanoseconds: 25_000_000)
+            } catch {
+                guard !Task.isCancelled && isOn else { return }
+                lastLatencyMs = Int(Date().timeIntervalSince(start) * 1000)
+                modelOutput = "ERR"
+                loopStatus = "error · retrying latest input"
+                try? await Task.sleep(nanoseconds: 150_000_000)
+            }
+        }
+    }
+
+    private func warmGLM() async {
         do {
-            let command = try await askGLM(input)
-            lastLatencyMs = Int(Date().timeIntervalSince(start) * 1000)
-            ticks += 1
-            lastUpdated = Date()
-            modelOutput = command
-            execute(command)
+            _ = try await askGLM("warmup")
         } catch {
-            lastLatencyMs = Int(Date().timeIntervalSince(start) * 1000)
-            modelOutput = "ERR"
+            // The real loop retries; warmup failure should not block controls.
         }
     }
 
@@ -66,7 +93,7 @@ final class MotionAIService: ObservableObject {
         let imu = useIMU ? read(imuFile, fallback: "?") : "off"
         return "r=\(range);s=\(sound);imu=\(imu)"
             .replacingOccurrences(of: "\n", with: " ")
-            .prefixString(900)
+            .prefixString(700)
     }
 
     private func read(_ url: URL, fallback: String) -> String {
@@ -74,17 +101,16 @@ final class MotionAIService: ObservableObject {
             .trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else {
             return fallback
         }
-        return text.prefixString(300)
+        return text.prefixString(240)
     }
 
     private func askGLM(_ input: String) async throws -> String {
-        // Very short context for speed. The model should output one tiny command.
+        // Ultra-short context for speed. Latest sensor frame in, one command out.
         let prompt = """
-        Robot balance controller. Output one command only.
-        Commands: LF,RF,LB,RB,WL,WR,LS,RS,WS,STOP,NONE.
-        LF left foot forward. RF right foot forward. LB left foot back. RB right foot back. WL shift weight left. WR shift weight right. LS stop left foot. RS stop right foot. WS stop weight shift.
-        Prefer safe/stable action from sensor+IMU. No explanation.
-        Data: \(input)
+        Balance bot. Reply one token only: LF RF LB RB WL WR LS RS WS STOP NONE.
+        LF/RF foot forward. LB/RB foot back. WL/WR shift weight. LS/RS/WS stop part.
+        Be safe, stable, fast. Data:
+        \(input)
         """
 
         let body: [String: Any] = [
@@ -92,11 +118,16 @@ final class MotionAIService: ObservableObject {
             "messages": [["role": "user", "content": prompt]],
             "think": false,
             "stream": false,
-            "options": ["num_predict": 4, "temperature": 0]
+            "keep_alive": "30m",
+            "options": [
+                "num_predict": 3,
+                "temperature": 0,
+                "num_ctx": 512
+            ]
         ]
 
         let httpBody = try JSONSerialization.data(withJSONObject: body)
-        var req = URLRequest(url: URL(string: "http://127.0.0.1:11434/api/chat")!)
+        var req = URLRequest(url: chatURL)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = httpBody
@@ -118,20 +149,21 @@ final class MotionAIService: ObservableObject {
         let upper = text.uppercased()
             .replacingOccurrences(of: "`", with: "")
             .replacingOccurrences(of: ".", with: "")
+            .replacingOccurrences(of: ",", with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        let allowed = ["LF", "RF", "LB", "RB", "WL", "WR", "LS", "RS", "WS", "STOP", "NONE"]
-        return allowed.first { upper.contains($0) } ?? "NONE"
+        let allowed = ["STOP", "NONE", "LF", "RF", "LB", "RB", "WL", "WR", "LS", "RS", "WS"]
+        return allowed.first { upper == $0 || upper.hasPrefix($0 + " ") || upper.contains("\n\($0)") } ?? allowed.first { upper.contains($0) } ?? "NONE"
     }
 
     private func execute(_ command: String) {
         lastCommand = command
         switch command {
-        case "LF": activeAction = "leftFootForward"; robot?.pulse(direction: "leftFootForward", duration: 0.16)
-        case "RF": activeAction = "rightFootForward"; robot?.pulse(direction: "rightFootForward", duration: 0.16)
-        case "LB": activeAction = "leftFootBack"; robot?.pulse(direction: "leftFootBack", duration: 0.16)
-        case "RB": activeAction = "rightFootBack"; robot?.pulse(direction: "rightFootBack", duration: 0.16)
-        case "WL": activeAction = "weightShiftLeft"; robot?.pulse(direction: "weightShiftLeft", duration: 0.16)
-        case "WR": activeAction = "weightShiftRight"; robot?.pulse(direction: "weightShiftRight", duration: 0.16)
+        case "LF": activeAction = "leftFootForward"; robot?.pulse(direction: "leftFootForward", duration: 0.14)
+        case "RF": activeAction = "rightFootForward"; robot?.pulse(direction: "rightFootForward", duration: 0.14)
+        case "LB": activeAction = "leftFootBack"; robot?.pulse(direction: "leftFootBack", duration: 0.14)
+        case "RB": activeAction = "rightFootBack"; robot?.pulse(direction: "rightFootBack", duration: 0.14)
+        case "WL": activeAction = "weightShiftLeft"; robot?.pulse(direction: "weightShiftLeft", duration: 0.14)
+        case "WR": activeAction = "weightShiftRight"; robot?.pulse(direction: "weightShiftRight", duration: 0.14)
         case "LS": activeAction = nil; robot?.send(direction: "leftFootStop")
         case "RS": activeAction = nil; robot?.send(direction: "rightFootStop")
         case "WS": activeAction = nil; robot?.send(direction: "weightShiftStop")
