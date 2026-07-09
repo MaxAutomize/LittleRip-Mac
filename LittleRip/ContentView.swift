@@ -206,9 +206,10 @@ struct ModelIOPanel: View {
     var body: some View {
         ConsolePanel(title: "MODEL INPUT WINDOW", subtitle: "continuous latest-input queue · glm-5.1 · think=false") {
             VStack(alignment: .leading, spacing: 10) {
-                DataRow(label: "MODEL", value: "glm-5.1:cloud · think=false · keep_alive=30m")
+                DataRow(label: "MODEL", value: "glm-5.1:cloud · stateless · think=false · keep_alive=30m")
+                GoalEditor(goal: $motionAI.goal)
                 DataRow(label: "FILES", value: "/tmp/littlebot_hcsr04.txt · /tmp/littlebot_sound.txt · /tmp/littlebot_mpu6050.json")
-                ScrollTextBox(title: "INPUT SENT", text: motionAI.modelInput, height: 176)
+                ScrollTextBox(title: "LATEST CONTEXT SENT", text: motionAI.modelInput, height: 142)
                 ScrollTextBox(title: "RAW OUTPUT", text: motionAI.modelOutput, height: 70)
             }
         }
@@ -251,6 +252,27 @@ struct RobotOutputPanel: View {
             .frame(maxWidth: 300)
         }
         .frame(width: 346)
+    }
+}
+
+struct GoalEditor: View {
+    @Binding var goal: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("CURRENT GOAL")
+                .font(.system(size: 10, weight: .black, design: .monospaced))
+                .tracking(1.4)
+                .foregroundStyle(Color.botChrome.opacity(0.7))
+            TextField("movement goal", text: $goal)
+                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                .textFieldStyle(.plain)
+                .foregroundStyle(Color.botWhite)
+                .padding(10)
+                .background(Color.black.opacity(0.55))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.botChrome.opacity(0.28), lineWidth: 1))
+        }
     }
 }
 

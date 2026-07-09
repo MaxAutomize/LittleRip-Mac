@@ -5,6 +5,7 @@ final class MotionAIService: ObservableObject {
     @Published var isOn = false
     @Published var useRangeSound = true
     @Published var useIMU = false
+    @Published var goal = "stay balanced and take the next safe walking action"
     @Published var modelInput = "AI controller is off."
     @Published var modelOutput = "—"
     @Published var lastCommand = "—"
@@ -16,7 +17,14 @@ final class MotionAIService: ObservableObject {
 
     private weak var robot: RobotControlService?
     private var task: Task<Void, Never>?
-    private var lastSubmittedInput = ""
+    private let systemPrompt = """
+    You are a stateless real-time robot movement controller.
+    You do not remember prior sensor frames.
+    Use only the current goal, current sensor reading, current IMU reading, and the allowed actions.
+    Reply with exactly one command token: LF RF LB RB WL WR LS RS WS STOP NONE.
+    LF/RF foot forward. LB/RB foot back. WL/WR shift weight. LS/RS/WS stop part. STOP stops all. NONE does nothing.
+    Prefer safe, stable, low-latency actions. No explanation.
+    """
 
     private let rangeFile = URL(fileURLWithPath: "/tmp/littlebot_hcsr04.txt")
     private let soundFile = URL(fileURLWithPath: "/tmp/littlebot_sound.txt")
@@ -28,7 +36,6 @@ final class MotionAIService: ObservableObject {
         self.robot = robot
         isOn = true
         loopStatus = "warming glm"
-        lastSubmittedInput = ""
 
         task = Task { [weak self] in
             await self?.warmGLM()
@@ -49,9 +56,9 @@ final class MotionAIService: ObservableObject {
 
     private func continuousControllerLoop() async {
         while !Task.isCancelled && isOn {
-            let input = compactSensorInput()
+            let sensorInput = compactSensorInput()
+            let input = latestContext(sensorInput: sensorInput)
             modelInput = input
-            lastSubmittedInput = input
             loopStatus = "glm in-flight · latest input only"
 
             let start = Date()
@@ -104,18 +111,19 @@ final class MotionAIService: ObservableObject {
         return text.prefixString(240)
     }
 
-    private func askGLM(_ input: String) async throws -> String {
-        // Ultra-short context for speed. Latest sensor frame in, one command out.
-        let prompt = """
-        Balance bot. Reply one token only: LF RF LB RB WL WR LS RS WS STOP NONE.
-        LF/RF foot forward. LB/RB foot back. WL/WR shift weight. LS/RS/WS stop part.
-        Be safe, stable, fast. Data:
-        \(input)
-        """
+    private func latestContext(sensorInput: String) -> String {
+        "goal=\(goal.prefixString(180));latest=\(sensorInput)"
+    }
 
+    private func askGLM(_ input: String) async throws -> String {
+        // Stateless call: fixed system prompt + current goal/latest reading only.
+        // No previous sensor frames are included in messages.
         let body: [String: Any] = [
             "model": "glm-5.1:cloud",
-            "messages": [["role": "user", "content": prompt]],
+            "messages": [
+                ["role": "system", "content": systemPrompt],
+                ["role": "user", "content": input]
+            ],
             "think": false,
             "stream": false,
             "keep_alive": "30m",

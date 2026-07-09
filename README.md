@@ -35,6 +35,19 @@ Only one model is hooked up for the action loop right now:
 - Loop mode: continuous latest-input worker; old sensor frames are dropped instead of queued
 - `keep_alive: 30m` keeps the Ollama Cloud model path warm where supported
 - After each model response, the app immediately reads the newest sensor frame and sends the next request
+- Context mode: stateless system prompt + current goal + latest sensor frame only
+
+## Context handling
+
+The movement pipeline is intentionally **stateless**.
+
+Each GLM call contains only:
+
+1. a fixed system prompt that defines the controller and allowed commands
+2. the current editable goal
+3. the newest sensor/IMU reading
+
+It does **not** include previous sensor readings, previous model outputs, or conversation memory. The app keeps the model path warm with `keep_alive`, but the model input stays fully in-the-moment.
 
 The prompt is intentionally tiny for latency. The model can output only:
 
